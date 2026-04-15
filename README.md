@@ -36,7 +36,7 @@ lending-club-grade-prediction/
 | Feature engineering | Drop post-origination leakage columns, impute nulls, encode categoricals |
 | Baseline | Random Forest (scikit-learn) |
 | Neural net | PyTorch MLP with embedding layers for categorical features |
-| Evaluation | Weighted F1, macro F1, confusion matrix, classification report |
+| Evaluation | Accuracy, Log-loss, Weighted F1, macro F1 |
 | Deployment | Flask API containerized with Docker |
 
 ## Results
