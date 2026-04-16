@@ -266,8 +266,8 @@ if __name__ == '__main__':
 
     # Save — one file only
     print('\nSaving model...')
-    joblib.dump(predictor, 'loan_grade_nn_model.pkl')
-    print('Saved: loan_grade_nn_model.pkl')
+    joblib.dump(predictor, 'model.pkl')
+    print('Saved: model.pkl')
     print('Done.')
     print('Printing feature names...')
     print(predictor.dv.feature_names_)
