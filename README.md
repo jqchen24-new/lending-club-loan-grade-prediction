@@ -1,7 +1,7 @@
-# Loan Grade Prediction — LendingClub
+# Loan Grade Prediction — Lending Club
 **ML Zoomcamp Capstone Project**
 
-![Python](https://img.shields.io/badge/Python-3.10-blue) ![PyTorch](https://img.shields.io/badge/PyTorch-2.x-orange) ![Docker](https://img.shields.io/badge/Docker-ready-green)
+![Python](https://img.shields.io/badge/Python-3.10-blue) ![PyTorch](https://img.shields.io/badge/PyTorch-2.x-orange) ![scikit--learn](https://img.shields.io/badge/scikit--learn-1.x-F7931E) ![XGBoost](https://img.shields.io/badge/XGBoost-2.x-red) ![Docker](https://img.shields.io/badge/Docker-ready-green)
 
 ## Problem description
 
@@ -35,17 +35,25 @@ lending-club-grade-prediction/
 | EDA | Class distribution, FICO vs grade, interest rate by grade, null analysis, correlation heatmap |
 | Data preprocessing | Drop post-origination leakage columns, impute nulls, encode categoricals |
 | Baseline | Random Forest (scikit-learn) |
-| Neural net | PyTorch MLP with embedding layers for categorical features |
+| XGBoost | XGBoost |
+| Neural net | PyTorch MLP |
 | Evaluation | Accuracy, Log-loss, Weighted F1, macro F1 |
 | Deployment | Flask API containerized with Docker |
 
 ## Results
 
-| Model | Weighted F1 | Macro F1 |  Accuracy |
-|---|---|---|---|
-| Random Forest |0.72 | 0.45 | 0.74 | 
-| XGBoost |0.94 | 0.67 | 0.94 |   
-| PyTorch MLP | 0.84 | 0.60 | 0.84 |
+| Metric        | Random Forest | XGBoost | PyTorch MLP (v1) | PyTorch MLP (v2) |
+|---------------|---------------|---------|------------------|------------------|
+| Accuracy      | 0.48          | 0.94    | 0.87             | 0.95             |
+| Weighted F1   | 0.45          | 0.94    | 0.87             | 0.95             |
+| Macro F1      | 0.26          | 0.66    | 0.77             | 0.85             |
+| Grade A F1    | 0.65          | 0.97    | 0.93             | 0.99             |
+| Grade B F1    | 0.42          | 0.93    | 0.84             | 0.94             |
+| Grade C F1    | 0.45          | 0.92    | 0.85             | 0.93             |
+| Grade D F1    | 0.21          | 0.92    | 0.87             | 0.96             |
+| Grade E F1    | 0.10          | 0.91    | 0.81             | 0.91             |
+| Grade F F1    | 0.00          | 0.00    | 0.66             | 0.80             |
+| Grade G F1    | 0.00          | 0.00    | 0.46             | 0.45             |
 
 ## Running locally
 
