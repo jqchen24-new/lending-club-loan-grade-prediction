@@ -196,7 +196,7 @@ def load_data(nrows=75000):
     path = kagglehub.dataset_download("adarshsng/lending-club-loan-data-csv")
     df = pd.read_csv(os.path.join(path, 'loan.csv'), nrows=nrows, low_memory=False)
 
-    drop_missing_columns = list(df.columns[df.isnull().sum() > 50000])
+    drop_missing_columns = list(df.columns[df.isnull().sum() > nrows * 0.5])
     df.drop(columns=drop_missing_columns, inplace=True)
 
     selector   = VarianceThreshold(threshold=0.01)
@@ -224,7 +224,7 @@ def load_data(nrows=75000):
         'pymnt_plan',
         
         # Next payment date (post-origination)
-    '   pymnt_plan', 'last_pymnt_d',
+        'last_pymnt_d', 'next_pymnt_d', 
         
         # Hardship/settlement (post-origination)
         'hardship_flag', 'debt_settlement_flag',
@@ -241,7 +241,10 @@ def load_data(nrows=75000):
 # ── Main ──────────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
     print('Loading data...')
-    df = load_data(nrows=500000)
+
+    nrows = 500000
+
+    df = load_data(nrows=nrows)
 
     df_full_train, df_test = train_test_split(
         df, test_size=0.2, random_state=42, stratify=df['grade']
