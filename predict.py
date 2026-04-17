@@ -1,15 +1,24 @@
-import torch
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Optional
+from typing import Dict, List, Optional
+
 from model import LoanGradePredictor
+from explain import ShapExplainer, ShapConfig
 
 # ── Load model ────────────────────────────────────────────────────────────────
 predictor = LoanGradePredictor.load('predictor.pkl')
 print("Model loaded successfully")
 print("Classes:", predictor.le.classes_)
+
+# ── SHAP explainer (lazy init) ────────────────────────────────────────────────
+_shap_explainer: Optional[ShapExplainer] = None
+def get_shap_explainer() -> ShapExplainer:
+    global _shap_explainer
+    if _shap_explainer is None:
+        _shap_explainer = ShapExplainer(predictor, ShapConfig(background_path="background.csv"))
+    return _shap_explainer
 
 # ── App ───────────────────────────────────────────────────────────────────────
 app = FastAPI(title='Loan Grade Predictor', version='1.0')
@@ -98,20 +107,83 @@ RISK_LEVELS = {
     'G': 'Highest Risk'
 }
 
+
+def _grade_probabilities_row(probs_row: np.ndarray) -> Dict[str, float]:
+    """Map one row of predict_proba output to letter-grade -> probability."""
+    classes = list(predictor.le.classes_)
+    return {str(classes[i]): float(probs_row[i]) for i in range(len(classes))}
+
+
+def _grade_probabilities_for_df(input_df: pd.DataFrame) -> List[Dict[str, float]]:
+    P = predictor.predict_proba(input_df)
+    return [_grade_probabilities_row(P[i]) for i in range(len(P))]
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.get('/health')
 def health():
     return {'status': 'ok'}
 
 @app.post('/predict')
-def predict(loan: LoanInput):
+def predict(loan: LoanInput, explain: bool = False, top_n: int = 10, max_evals: int = 256):
     input_data = {k: v for k, v in loan.model_dump().items() if v is not None}
     input_df   = pd.DataFrame([input_data])
-    grade      = predictor.predict(input_df)[0]
-    return {
-        'grade':      grade,
-        'risk_level': RISK_LEVELS.get(grade, 'Unknown')
+    grade      = str(predictor.predict(input_df)[0])
+    resp = {
+        'grade':                 grade,
+        'risk_level':            RISK_LEVELS.get(grade, 'Unknown'),
+        'grade_probabilities':   _grade_probabilities_for_df(input_df)[0],
     }
+    if explain:
+        resp["explanation"] = get_shap_explainer().build_explanation_rows(
+            input_data, top_n=top_n, max_evals=max_evals
+        )
+    return resp
+
+@app.post('/explain')
+def explain_endpoint(loan: LoanInput, top_n: int = 10, max_evals: int = 256):
+    input_data = {k: v for k, v in loan.model_dump().items() if v is not None}
+    input_df = pd.DataFrame([input_data])
+    grade = str(predictor.predict(input_df)[0])
+    explanation = get_shap_explainer().build_explanation_rows(
+        input_data, top_n=top_n, max_evals=max_evals
+    )
+    return {
+        "grade": grade,
+        "risk_level": RISK_LEVELS.get(grade, "Unknown"),
+        "grade_probabilities": _grade_probabilities_for_df(input_df)[0],
+        "explanation": explanation,
+    }
+
+# ── Batch schema ──────────────────────────────────────────────────────────────
+class BatchLoanInput(BaseModel):
+    loans: list[LoanInput]
+
+# ── Batch endpoint ────────────────────────────────────────────────────────────
+@app.post('/batch')
+def batch_predict(batch: BatchLoanInput, explain: bool = False, top_n: int = 10, max_evals: int = 256):
+    records  = [{k: v for k, v in loan.model_dump().items() if v is not None}
+                for loan in batch.loans]
+    input_df = pd.DataFrame(records)
+    grades   = predictor.predict(input_df)
+    prob_rows = _grade_probabilities_for_df(input_df)
+
+    preds = [
+        {
+            'grade': str(g),
+            'risk_level': RISK_LEVELS.get(str(g), 'Unknown'),
+            'grade_probabilities': prob_rows[i],
+        }
+        for i, g in enumerate(grades)
+    ]
+    if explain:
+        explainer = get_shap_explainer()
+        for i, rec in enumerate(records):
+            preds[i]["explanation"] = explainer.build_explanation_rows(
+                rec, top_n=top_n, max_evals=max_evals
+            )
+
+    return {'predictions': preds, 'count': len(grades)}
 
 if __name__ == '__main__':
     import uvicorn
