@@ -123,6 +123,43 @@ joblib
 numpy
 ```
 
+## Cloud Deployment
+
+The model is deployed on Railway and publicly accessible.
+
+### Health check
+```bash
+curl https://lending-club-loan-grade-prediction-production.up.railway.app/health
+```
+
+### Test the live API
+```bash
+curl -X POST https://lending-club-loan-grade-prediction-production.up.railway.app/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "loan_amnt": 35000,
+    "annual_inc": 32000,
+    "dti": 42.0,
+    "term": " 60 months",
+    "home_ownership": "RENT",
+    "revol_util": 95.0,
+    "delinq_2yrs": 5,
+    "pub_rec": 2,
+    "pub_rec_bankruptcies": 1,
+    "num_tl_90g_dpd_24m": 4,
+    "pct_tl_nvr_dlq": 40.0,
+    "installment": 950.0,
+    "funded_amnt": 35000,
+    "bc_util": 92.0
+  }'
+```
+
+### Interactive API docs
+Visit the live Swagger UI:
+```
+https://lending-club-loan-grade-prediction-production.up.railway.app/docs
+```
+
 ## Acknowledgements
 
 Dataset sourced from Kaggle. Project built as part of the ML Zoomcamp curriculum.
