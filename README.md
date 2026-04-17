@@ -20,9 +20,10 @@ A deployed model could help a lender automatically route applications to the cor
 ```
 lending-club-grade-prediction/
 ├── notebook.ipynb          # EDA, feature engineering, model training
-├── train.py                # training script (exported from notebook)
-├── predict.py              # Flask prediction service
-├── predictor.pkl               # serialized pipeline
+├── train.py                # training script
+├── predict.py              # FastAPI prediction service  ← was Flask
+├── model.py                # model and predictor class definitions  ← add this
+├── predictor.pkl           # serialized model artifact
 ├── Dockerfile
 ├── requirements.txt
 └── README.md
@@ -38,7 +39,7 @@ lending-club-grade-prediction/
 | XGBoost | XGBoost |
 | Neural net | PyTorch MLP |
 | Evaluation | Accuracy, Log-loss, Weighted F1, macro F1 |
-| Deployment | Flask API containerized with Docker |
+| Deployment | FastAPI containerized with Docker |
 
 ## Results
 
@@ -60,7 +61,6 @@ lending-club-grade-prediction/
 ### Prerequisites
 - Python 3.10
 - Docker
-- A trained `predictor.pkl` file (see Training section below)
 
 ### 1. Install dependencies
 ```bash
@@ -94,11 +94,16 @@ docker run -p 9696:9696 loan-grade-predictor
 
 ## Training
 
-> ⚠️ `train.py` requires a GPU. Run on Google Colab with T4 runtime.
+> ⚠️ For best results, run `train.py` on Google Colab with T4 GPU runtime.
 
+**On Colab (recommended):**
 ```bash
-# In Colab
 !python train.py
+```
+
+**Locally on CPU (faster, fewer rows):**
+```bash
+python train.py --cpu --nrows 150000
 ```
 
 The script downloads the dataset automatically via `kagglehub` and saves `predictor.pkl`.
@@ -108,12 +113,14 @@ The script downloads the dataset automatically via `kagglehub` and saves `predic
 
 ```
 pandas
-scikit-learn
+scikit-learn==1.6.1
 xgboost
 torch
-flask
-gunicorn
+fastapi
+uvicorn
 kagglehub
+joblib
+numpy
 ```
 
 ## Acknowledgements
