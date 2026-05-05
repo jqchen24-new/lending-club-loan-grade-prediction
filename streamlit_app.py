@@ -30,6 +30,20 @@ def _api_base() -> str:
     return os.environ.get("LOAN_API_BASE", DEFAULT_API_BASE).rstrip("/")
 
 
+def _api_caption() -> str:
+    base = _api_base()
+    low = base.lower()
+    if "127.0.0.1" in low or "localhost" in low:
+        return (
+            f"API: `{base}` — start the backend with "
+            "`uvicorn predict:app --host 0.0.0.0 --port 9696` from the project root."
+        )
+    return (
+        f"API: `{base}` — this app sends requests to that backend. "
+        "Set env `LOAN_API_BASE` when deploying (e.g. Railway) to point here."
+    )
+
+
 def _num(name: str, label: str, default: float, step: float = 1.0) -> float:
     v = st.number_input(label, min_value=0.0, value=float(default), step=step, key=name)
     return cast(float, v)
@@ -205,9 +219,7 @@ def main() -> None:
         "**What it is not:** Legal, financial, or underwriting advice; a replacement for real compliance, "
         "fair-lending review, or human decisions."
     )
-    st.caption(
-        f"API: `{_api_base()}` — start with `uvicorn predict:app --host 0.0.0.0 --port 9696` from the project root."
-    )
+    st.caption(_api_caption())
 
     with st.sidebar:
         st.markdown(
@@ -293,7 +305,7 @@ def main() -> None:
         with httpx.Client(timeout=REQUEST_TIMEOUT_S) as client:
             r = client.post(url, params=params, json=payload)
     except httpx.ConnectError as e:
-        st.error(f"Could not connect to API at `{_api_base()}`. Is uvicorn running? ({e})")
+        st.error(f"Could not connect to API at `{_api_base()}`. Is it running and reachable? ({e})")
         return
     except httpx.TimeoutException:
         st.error("Request timed out. Try lowering max_evals or top_n, or retry.")

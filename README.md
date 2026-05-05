@@ -29,8 +29,10 @@ Capstone_project/
 ├── predictor.pkl            # Serialized trained artifact
 ├── tests/
 │   └── test_api.py          # API tests (pytest)
-├── Dockerfile
+├── Dockerfile               # FastAPI + model image
+├── Dockerfile.streamlit     # Streamlit UI only (calls API over HTTP)
 ├── requirements.txt
+├── requirements-streamlit.txt  # Slim deps for the UI container (no torch)
 ├── sklearn/                 # Optional XGBoost experiment artifacts
 └── README.md
 ```
@@ -46,7 +48,7 @@ Capstone_project/
 | Neural net | PyTorch MLP |
 | Evaluation | Accuracy, Log-loss, Weighted F1, macro F1 |
 | Explanations | SHAP (KernelExplainer) with `background.csv` aligned to the predictor |
-| Deployment | FastAPI + optional Streamlit; Docker image for the API |
+| Deployment | FastAPI on Railway; optional Streamlit UI as a second Railway service ([Dockerfile.streamlit](Dockerfile.streamlit)) |
 
 ## Results
 
@@ -179,11 +181,37 @@ docker run -p 9696:9696 loan-grade-predictor
 
 **SHAP in Docker:** The checked-in [Dockerfile](Dockerfile) copies `predict.py`, `model.py`, and `predictor.pkl`. The app imports [explain.py](explain.py), which loads [background.csv](background.csv) by default. For `/predict?explain=true`, `/explain`, or `/batch?explain=true` to work inside the image, add **`COPY explain.py .`** and **`COPY background.csv .`** (and any other runtime files your build needs) to the Dockerfile, or expect import/runtime errors when those routes run.
 
+**Streamlit image (local):**
+
+```bash
+docker build -f Dockerfile.streamlit -t loan-grade-ui .
+docker run --rm -p 8501:8501 \
+  -e LOAN_API_BASE=http://host.docker.internal:9696 \
+  loan-grade-ui
+```
+
+Use your machine’s reachable API URL instead of `host.docker.internal` on Linux if needed (`172.17.0.1` or the host LAN IP).
+
 ## Cloud Deployment
 
-The model is deployed on Railway and publicly accessible.
+The model API is deployed on Railway and publicly accessible.
 
-If the deployed image does not include `explain.py` and `background.csv`, **prediction without explanations** may still work; **explain routes** require those artifacts in the container (same as local).
+If the deployed API image does not include `explain.py` and `background.csv`, **prediction without explanations** may still work; **explain routes** require those artifacts in the API container (same as local).
+
+### Railway: Streamlit UI (second service)
+
+Keep your **existing FastAPI service** as-is. Add a **new** Railway service from the **same GitHub repo** for the browser UI.
+
+1. In your Railway project, click **New** → **GitHub Repo** → select this repository (or **Empty service** → connect repo).
+2. Open the new service → **Settings**:
+   - Under **Build**, set **Dockerfile path** to `Dockerfile.streamlit` (not the root `Dockerfile`).
+3. **Variables** → add:
+   - **`LOAN_API_BASE`** = your API’s public origin only, e.g. `https://lending-club-loan-grade-prediction-production.up.railway.app`  
+     (no `/predict` suffix; the app calls `/explain` and `/predict` internally.)
+4. **Networking**: generate a **public domain** for the Streamlit service (Railway assigns **`PORT`** automatically; the image listens on `$PORT`).
+5. Deploy and open the Streamlit URL. If the page loads but requests fail, check logs: wrong `LOAN_API_BASE`, HTTP vs HTTPS, or API cold-start timeouts.
+
+The Streamlit container installs only [requirements-streamlit.txt](requirements-streamlit.txt) (no PyTorch or `predictor.pkl`)—SHAP still runs on the **API** when you use `/explain`.
 
 ### Health check
 
