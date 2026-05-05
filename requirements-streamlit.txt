@@ -1,0 +1,6 @@
+# Streamlit UI only — HTTP client to your Railway FastAPI (no torch / predictor on this service).
+streamlit==1.51.0
+httpx==0.28.1
+pandas==2.3.3
+numpy==2.2.6
+shap==0.49.1
