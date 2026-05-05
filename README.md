@@ -196,6 +196,13 @@ Use your machine’s reachable API URL instead of `host.docker.internal` on Linu
 
 The model API is deployed on Railway and publicly accessible.
 
+**Live URLs:**
+
+| | |
+|---|---|
+| **Streamlit UI** | [https://lending-club-loan-grade-prediction-production-4bbc.up.railway.app](https://lending-club-loan-grade-prediction-production-4bbc.up.railway.app) |
+| **FastAPI** | [https://lending-club-loan-grade-prediction-production.up.railway.app](https://lending-club-loan-grade-prediction-production.up.railway.app) |
+
 If the deployed API image does not include `explain.py` and `background.csv`, **prediction without explanations** may still work; **explain routes** require those artifacts in the API container (same as local).
 
 ### Railway: Streamlit UI (second service)
