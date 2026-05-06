@@ -18,7 +18,7 @@ A deployed model could help a lender automatically route applications to the cor
 ## Project structure
 
 ```
-Capstone_project/
+Capstone_project/   # local clone folder name may differ
 ├── notebook.ipynb           # EDA, feature engineering, experiments
 ├── train.py                 # Training script (saves predictor.pkl)
 ├── model.py                 # LoanGradePredictor and pipeline definitions
@@ -170,7 +170,7 @@ curl -s -X POST "http://localhost:9696/explain?top_n=10&max_evals=256" \
 - `grade`: predicted letter `A`–`G`
 - `risk_level`: human-readable label derived from `grade`
 - `grade_probabilities`: map of letter → probability (one row per prediction)
-- `explanation` (when requested): list of `{ "feature", "value", "shap_value", "direction" }` rows (top drivers by \|SHAP\|)
+- `explanation` (when requested): list of `{ "feature", "value", "shap_value", "direction" }` rows (top drivers by absolute SHAP value)
 
 ## Build and run with Docker
 
@@ -179,7 +179,7 @@ docker build -t loan-grade-predictor .
 docker run -p 9696:9696 loan-grade-predictor
 ```
 
-**SHAP in Docker:** The checked-in [Dockerfile](Dockerfile) copies `predict.py`, `model.py`, and `predictor.pkl`. The app imports [explain.py](explain.py), which loads [background.csv](background.csv) by default. For `/predict?explain=true`, `/explain`, or `/batch?explain=true` to work inside the image, add **`COPY explain.py .`** and **`COPY background.csv .`** (and any other runtime files your build needs) to the Dockerfile, or expect import/runtime errors when those routes run.
+**SHAP in Docker:** The checked-in [Dockerfile](Dockerfile) copies `predict.py`, `model.py`, and `predictor.pkl` only. [predict.py](predict.py) imports [explain.py](explain.py) at startup, so the container **will fail to start** unless **`explain.py`** is copied into the image. **`background.csv`** is read when the SHAP explainer is first built; without it, **`POST /predict`** (without `explain`) may still work, but **`/explain`**, **`/predict?explain=true`**, and **`/batch?explain=true`** fail until `background.csv` is present (add **`COPY explain.py .`** and **`COPY background.csv .`** to match local parity).
 
 **Streamlit image (local):**
 
@@ -203,11 +203,13 @@ The model API is deployed on Railway and publicly accessible.
 | **Streamlit UI** | [https://lending-club-loan-grade-prediction-production-4bbc.up.railway.app](https://lending-club-loan-grade-prediction-production-4bbc.up.railway.app) |
 | **FastAPI** | [https://lending-club-loan-grade-prediction-production.up.railway.app](https://lending-club-loan-grade-prediction-production.up.railway.app) |
 
-If the deployed API image does not include `explain.py` and `background.csv`, **prediction without explanations** may still work; **explain routes** require those artifacts in the API container (same as local).
+The deployed API image must include **`explain.py`** (otherwise the process exits on import). It should also include **`background.csv`** if you rely on **`/explain`** or **`explain=true`** (same as local).
 
 ### Railway: Streamlit UI (second service)
 
 Keep your **existing FastAPI service** as-is. Add a **new** Railway service from the **same GitHub repo** for the browser UI.
+
+Use the GitHub **branch** that contains `Dockerfile.streamlit` (for example `SHAP`); if Railway deploys **`main`** only, merge that branch or switch the service’s tracked branch.
 
 1. In your Railway project, click **New** → **GitHub Repo** → select this repository (or **Empty service** → connect repo).
 2. Open the new service → **Settings**:
