@@ -6,6 +6,7 @@ import joblib
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.feature_extraction import DictVectorizer
+import torch.nn.functional as F
 
 class LoanDataset(Dataset):
     def __init__(self, X, y):
@@ -52,6 +53,25 @@ class LoanGradePredictor:
         X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
         X = self.scaler.fit_transform(X) if fit else self.scaler.transform(X)
         return X
+
+    def transform(self, records):
+        """
+        Transform raw records/DataFrame into the model's numeric input space.
+        Returns (X, feature_names) where X is a dense numpy array.
+        """
+        X = self._prepare_X(records, fit=False)
+        feature_names = getattr(self.dv, "feature_names_", None)
+        if feature_names is None:
+            feature_names = []
+        return X, list(feature_names)
+
+    def predict_proba(self, df):
+        X = self._prepare_X(df)
+        with torch.no_grad():
+            X_tensor = torch.FloatTensor(X).to(self.device)
+            logits = self.model(X_tensor)
+            probs = F.softmax(logits, dim=1).cpu().numpy()
+        return probs
 
     def predict(self, df):
         X = self._prepare_X(df)
