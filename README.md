@@ -179,7 +179,7 @@ docker build -t loan-grade-predictor .
 docker run -p 9696:9696 loan-grade-predictor
 ```
 
-**SHAP in Docker:** The checked-in [Dockerfile](Dockerfile) copies `predict.py`, `model.py`, and `predictor.pkl` only. [predict.py](predict.py) imports [explain.py](explain.py) at startup, so the container **will fail to start** unless **`explain.py`** is copied into the image. **`background.csv`** is read when the SHAP explainer is first built; without it, **`POST /predict`** (without `explain`) may still work, but **`/explain`**, **`/predict?explain=true`**, and **`/batch?explain=true`** fail until `background.csv` is present (add **`COPY explain.py .`** and **`COPY background.csv .`** to match local parity).
+**SHAP in Docker:** The checked-in [Dockerfile](Dockerfile) copies **`predict.py`**, **`model.py`**, **`predictor.pkl`**, **`explain.py`**, and **`background.csv`**, so **`/explain`** and **`explain=true`** match local behavior. If you fork the Dockerfile, keep those copies or restore [predict.py](predict.py)’s imports and SHAP paths will break at startup or on first explanation request.
 
 **Streamlit image (local):**
 
@@ -203,7 +203,7 @@ The model API is deployed on Railway and publicly accessible.
 | **Streamlit UI** | [https://lending-club-loan-grade-prediction-production-4bbc.up.railway.app](https://lending-club-loan-grade-prediction-production-4bbc.up.railway.app) |
 | **FastAPI** | [https://lending-club-loan-grade-prediction-production.up.railway.app](https://lending-club-loan-grade-prediction-production.up.railway.app) |
 
-The deployed API image must include **`explain.py`** (otherwise the process exits on import). It should also include **`background.csv`** if you rely on **`/explain`** or **`explain=true`** (same as local).
+Redeploy the API service after pulling this change so Railway picks up **`explain.py`** and **`background.csv`** in the image (custom builds that omit them will fail on import or on explanation routes).
 
 ### Railway: Streamlit UI (second service)
 

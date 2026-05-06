@@ -13,6 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY predictor.pkl .
 COPY model.py .
 COPY predict.py .
+COPY explain.py .
+COPY background.csv .
 
 EXPOSE 9696
 
