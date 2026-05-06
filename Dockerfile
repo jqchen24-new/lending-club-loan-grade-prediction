@@ -2,13 +2,13 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY requirements-api.txt .
 
 # Install PyTorch CPU-only version — much smaller (~800MB vs 2GB+)
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
-# Install remaining dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install remaining dependencies (API-only)
+RUN pip install --no-cache-dir -r requirements-api.txt
 
 COPY predictor.pkl .
 COPY model.py .

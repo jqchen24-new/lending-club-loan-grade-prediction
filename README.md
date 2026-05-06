@@ -179,7 +179,7 @@ docker build -t loan-grade-predictor .
 docker run -p 9696:9696 loan-grade-predictor
 ```
 
-**SHAP in Docker:** The checked-in [Dockerfile](Dockerfile) copies **`predict.py`**, **`model.py`**, **`predictor.pkl`**, **`explain.py`**, and **`background.csv`**, so **`/explain`** and **`explain=true`** match local behavior. If you fork the Dockerfile, keep those copies or restore [predict.py](predict.py)’s imports and SHAP paths will break at startup or on first explanation request.
+**SHAP in Docker:** The checked-in [Dockerfile](Dockerfile) copies **`predict.py`**, **`model.py`**, **`predictor.pkl`**, **`explain.py`**, and **`background.csv`**, so **`/explain`** and **`explain=true`** match local behavior. The image installs **API-only dependencies** from [requirements-api.txt](requirements-api.txt) to avoid conflicts with Streamlit/training-only packages.
 
 **Streamlit image (local):**
 
