@@ -11,6 +11,10 @@ conda-env/
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 
+# Python
+__pycache__/
+*.pyc
+
 # Data
 *.csv
 *.parquet
