@@ -216,7 +216,7 @@ Use the GitHub **branch** that contains `Dockerfile.streamlit` (for example `SHA
    - Under **Build**, set **Dockerfile path** to `Dockerfile.streamlit` (not the root `Dockerfile`).
 3. **Variables** → add:
    - **`LOAN_API_BASE`** = your API’s public origin only, e.g. `https://lending-club-loan-grade-prediction-production.up.railway.app`  
-     (no `/predict` suffix; the app calls `/explain` and `/predict` internally.)
+     (**scheme + host** only—no `/predict`, `/docs`, or trailing path. Using the Streamlit URL here causes HTTP 404.)
 4. **Networking**: generate a **public domain** for the Streamlit service (Railway assigns **`PORT`** automatically; the image listens on `$PORT`).
 5. Deploy and open the Streamlit URL. If the page loads but requests fail, check logs: wrong `LOAN_API_BASE`, HTTP vs HTTPS, or API cold-start timeouts.
 

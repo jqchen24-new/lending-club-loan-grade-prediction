@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 from typing import Any, Dict, List, Optional, cast
+from urllib.parse import urlparse
 
 import httpx
 import pandas as pd
@@ -27,7 +28,29 @@ REQUEST_TIMEOUT_S = 120.0
 
 
 def _api_base() -> str:
-    return os.environ.get("LOAN_API_BASE", DEFAULT_API_BASE).rstrip("/")
+    """
+    FastAPI origin only (scheme + host[:port]). Strips accidental paths such as
+    /predict or /docs so requests hit /explain and /predict at the service root.
+    """
+    raw = (os.environ.get("LOAN_API_BASE") or DEFAULT_API_BASE).strip()
+    raw = raw.rstrip("/")
+    if not raw:
+        return DEFAULT_API_BASE.rstrip("/")
+    if "://" not in raw:
+        raw = "http://" + raw
+    parsed = urlparse(raw)
+    if parsed.scheme and parsed.netloc:
+        return f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+    return raw
+
+
+def _post_explain(client: httpx.Client, base: str, payload: Dict[str, Any], params: Dict[str, Any]) -> httpx.Response:
+    """POST /explain; on 404 retry /predict?explain=true (older or mismatched deployments)."""
+    r = client.post(f"{base}/explain", params=params, json=payload)
+    if r.status_code != 404:
+        return r
+    fb = {**params, "explain": "true"}
+    return client.post(f"{base}/predict", params=fb, json=payload)
 
 
 def _api_caption() -> str:
@@ -298,12 +321,12 @@ def main() -> None:
         application_type=application_type,
     )
 
-    url = f"{_api_base()}/explain"
+    base = _api_base()
     params = {"top_n": int(top_n), "max_evals": int(max_evals)}
 
     try:
         with httpx.Client(timeout=REQUEST_TIMEOUT_S) as client:
-            r = client.post(url, params=params, json=payload)
+            r = _post_explain(client, base, payload, params)
     except httpx.ConnectError as e:
         st.error(f"Could not connect to API at `{_api_base()}`. Is it running and reachable? ({e})")
         return
@@ -312,7 +335,14 @@ def main() -> None:
         return
 
     if r.status_code != 200:
-        st.error(f"API returned {r.status_code}: {r.text[:2000]}")
+        hint = ""
+        if r.status_code == 404:
+            hint = (
+                " **Check `LOAN_API_BASE`:** it must be your **FastAPI** service URL "
+                "(e.g. `https://…up.railway.app` with **no** `/predict` path), "
+                "not the Streamlit app URL."
+            )
+        st.error(f"API returned {r.status_code}: {r.text[:2000]}{hint}")
         return
 
     data = r.json()
