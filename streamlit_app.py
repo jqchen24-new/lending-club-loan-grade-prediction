@@ -40,7 +40,12 @@ def _api_base() -> str:
         raw = "http://" + raw
     parsed = urlparse(raw)
     if parsed.scheme and parsed.netloc:
-        return f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+        scheme = parsed.scheme
+        host = parsed.netloc.lower()
+        # Railway serves HTTPS; http→https otherwise yields 301 and httpx does not follow POST redirects by default.
+        if scheme == "http" and ("railway.app" in host or host.endswith("railway.app")):
+            scheme = "https"
+        return f"{scheme}://{parsed.netloc}".rstrip("/")
     return raw
 
 
@@ -325,7 +330,7 @@ def main() -> None:
     params = {"top_n": int(top_n), "max_evals": int(max_evals)}
 
     try:
-        with httpx.Client(timeout=REQUEST_TIMEOUT_S) as client:
+        with httpx.Client(timeout=REQUEST_TIMEOUT_S, follow_redirects=True) as client:
             r = _post_explain(client, base, payload, params)
     except httpx.ConnectError as e:
         st.error(f"Could not connect to API at `{_api_base()}`. Is it running and reachable? ({e})")
