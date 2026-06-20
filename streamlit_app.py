@@ -94,7 +94,7 @@ def _build_payload(
     pub_rec_bankruptcies: float,
     num_tl_90g_dpd_24m: float,
     pct_tl_nvr_dlq: float,
-    installment: float,
+    # installment: float,
     funded_amnt: float,
     bc_util: float,
     term: Optional[str],
@@ -111,7 +111,7 @@ def _build_payload(
         "pub_rec_bankruptcies": pub_rec_bankruptcies,
         "num_tl_90g_dpd_24m": num_tl_90g_dpd_24m,
         "pct_tl_nvr_dlq": pct_tl_nvr_dlq,
-        "installment": installment,
+        # "installment": installment,
         "funded_amnt": funded_amnt,
         "bc_util": bc_util,
     }
@@ -274,7 +274,7 @@ def main() -> None:
             num_tl_90g_dpd_24m = _num("num_tl_90g_dpd_24m", "90+ DPD tradelines (24m)", 0.0, 1.0)
         with c3:
             pct_tl_nvr_dlq = _num("pct_tl_nvr_dlq", "% tradelines never delinq", 95.0, 1.0)
-            installment = _num("installment", "Installment payment", 350.0, 10.0)
+            # installment = _num("installment", "Installment payment", 350.0, 10.0)
             funded_amnt = _num("funded_amnt", "Funded amount", 10_000.0, 500.0)
             bc_util = _num("bc_util", "BC utilization (%)", 40.0, 1.0)
 
@@ -318,7 +318,7 @@ def main() -> None:
         pub_rec_bankruptcies=pub_rec_bankruptcies,
         num_tl_90g_dpd_24m=num_tl_90g_dpd_24m,
         pct_tl_nvr_dlq=pct_tl_nvr_dlq,
-        installment=installment,
+        # installment=installment,
         funded_amnt=funded_amnt,
         bc_util=bc_util,
         term=term,
