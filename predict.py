@@ -41,7 +41,7 @@ class LoanInput(BaseModel):
     inq_fi:                     Optional[float] = None
     inq_last_12m:               Optional[float] = None
     inq_last_6mths:             Optional[float] = None
-    installment:                Optional[float] = None
+    # installment:                Optional[float] = None
     loan_amnt:                  Optional[float] = None
     max_bal_bc:                 Optional[float] = None
     mo_sin_old_il_acct:         Optional[float] = None
